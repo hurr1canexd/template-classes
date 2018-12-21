@@ -51,9 +51,10 @@ int main()
 	cout << "myPoly1 % myPoly2 = " << myPoly1 % myPoly2 << endl;
 	cout << "myPoly1(5) = " << myPoly1.pointValue(5) << endl;
 	cout << "myPoly1'(x) = " << myPoly1.differentiate() << endl;
-	//cout << "myPoly1(myPoly2) = " << myPoly1.superposition(myPoly2) << endl;
+	cout << "myPoly1(myPoly2) = " << myPoly1.superposition(myPoly2) << endl;
 	//map<int, Fraction<int>> mp3 = {{0, fract1}, {1, fract2}, {2, fract3}}, mp4 = {{0, fract2}, {1, fract3}};
 	
+
 	system("pause");
 	return 0;
 }
