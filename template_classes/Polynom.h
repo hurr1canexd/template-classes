@@ -1,386 +1,554 @@
 #pragma once
 
-#include <vector>
-#include <iterator>
-#include <algorithm>
 #include <map>
-#include <cmath>
-#include "Fraction.h"
+#include <iterator>
 
 using namespace std;
-template <class T>
+
+/*template <typename T>
 class Polynom
 {
-private:
-	map<int, T> poly;
-	void isZero();
-
 public:
-	Polynom();
-	Polynom(int);
-	Polynom(int, T);
-	Polynom(const Polynom<T>&);
-	~Polynom() = default;
+	// Constructors === Конструкторы
+	Polynom() = default;
+	Polynom(map<int, T>&);
+	Polynom(const Polynom&);
 
-	Polynom<T> operator+ (const Polynom<T>&) const;
-	Polynom<T> operator- (const Polynom<T>&) const;
-	Polynom<T> operator* (const Polynom<T>&) const;
-	Polynom<T> operator* (const T) const;
-	Polynom<T> operator/ (const Polynom<T>&) const;
-	Polynom<T>& operator= (const Polynom<T>&);
+	// Overloadings === Перегрузки
+	Polynom operator+(const Polynom&);
+	Polynom operator-(const Polynom&);
+	Polynom operator*(const Polynom&);
+	Polynom operator*(const int&);
+	Polynom operator/(const Polynom&);
+	Polynom operator%(const Polynom&);
+	Polynom& operator=(const Polynom&);
 
-	void add(int, const T&);	// перезапись элемента
-	void addP(int, const T&);	// добавление к текущему
-	Polynom<T> differentiation() const;
-	T solve(T x) const;
+	// Add monom === Добавить моном
+	void addMonom(const T&, const int&);
+	// Differentiate === Дифференцировать
+	Polynom differentiate();
+	// ----- Значение функции в точке -----
+	T atX(const T&);
+	// ----- Суперпозиция -----
+	Polynom superposition(const Polynom&);
 
-	template<class U>
-	friend Fraction<U> pow(const Fraction<U>&, int);
+	// ===== Перегрузка оператора вставки в поток =====
+	template<typename U>
+	friend ostream& operator<< (ostream &, const Polynom<U>&);
 
-	template<class U>
-	friend Polynom<U> pow(const Polynom<U>&, int);
-
-	template<class T>
-	friend Polynom<T> operator* (const T&, const Polynom<T>&);
-
-	template<class U>
-	friend ostream& operator<<(ostream&, const Polynom<U>&);
-
-	template<class U>
-	friend istream& operator>>(istream&, Polynom<U>&);
+private:
+	// ===== Хэш: ключ-степень, значение-коэффициент =====
+	map<int, T> polynom;
 };
 
-template<class T>
-Polynom<T>::Polynom()
+
+
+// ===== Конструкторы =====
+template <typename T>
+Polynom<T>::Polynom(map<int, T>& initmap)
 {
-	poly.insert(pair<int, T>(0, T(0))); // кладёт степень и коэффициент в полином
+	this->polynom = initmap;
 }
 
-template<class T>
-Polynom<T>::Polynom(int degree)
+template <typename T>
+Polynom<T>::Polynom(const Polynom& other)
 {
-	poly.insert(pair<int, T>(degree, T(0))); // то же, но степень введена
+	this->polynom = other.polynom;
 }
 
-template<class T>
-Polynom<T>::Polynom(int degree, T koef)
+// operator+
+template <typename T>
+Polynom<T> Polynom<T>::operator+(const Polynom<T>& other)
 {
-	poly.insert(pair<int, T>(degree, koef)); // то же, но всё введено
+	Polynom<T> result(*this);
+	for (auto it : other.polynom)
+		result.addMonom(it.second, it.first);
+	return result;
 }
 
-template<class T>
-Polynom<T>::Polynom(const Polynom<T>& P)
+// operator-
+template <typename T>
+Polynom<T> Polynom<T>::operator-(const Polynom<T>& other)
 {
-	this->poly = P.poly;
+	Polynom<T> result(other * -1);
+	result = *this + result;
+	return result;
 }
 
-template<class T>
-inline Polynom<T> Polynom<T>::operator+(const Polynom<T>& P) const
+// operator*
+template <typename T>
+Polynom<T> Polynom<T>::operator*(const Polynom<T>& other)
 {
-	Polynom<T> newpoly;
-	newpoly = *this;		//кладём первый полином
-
-	for (auto iter = P.poly.begin(); iter != P.poly.end(); ++iter)
-	{
-		auto itfind = this->poly.find(iter->first);
-		if (itfind != this->poly.end())		//ищем одинаковые степени
-			newpoly.poly[iter->first] = iter->second + itfind->second;
-		else
-			newpoly.poly.insert(pair<int, T>(iter->first, iter->second));
-	}
-
-	newpoly.isZero();
-	return newpoly;
+	Polynom<T> result;
+	for (auto it : this->polynom)
+		for (auto jt : other.polynom)
+			result.addMonom(it.second * jt.second, it.first + jt.first);
+	return result;
 }
 
-template<class T>
-Polynom<T> Polynom<T>::operator-(const Polynom<T>& P) const
+// multiply by number
+template <typename T>
+Polynom<T> Polynom<T>::operator*(const int& num)
 {
-	Polynom<T> newpoly;
-	newpoly = *this;		//кладём первый полином
-
-	for (auto iter = P.poly.begin(); iter != P.poly.end(); ++iter)
-	{
-		auto itfind = this->poly.find(iter->first);
-		if (itfind != this->poly.end())		//ищем одинаковые степени
-			newpoly.poly[iter->first] = itfind->second - iter->second;
-		else
-			newpoly.poly.insert(pair<int, T>(iter->first, iter->second * (-1)));
-	}
-
-	newpoly.isZero();
-	return newpoly;
+	Polynom<T> result;
+	for (auto it : this->polynom)
+		result.addMonom(it.second * num, it.first);
+	return result;
 }
 
-template<class T>
-Polynom<T> Polynom<T>::operator* (const Polynom<T>& P) const
+// operator/
+template<typename T>
+Polynom<T> Polynom<T>::operator/(const Polynom<T>& other)
 {
-	Polynom<T> newpoly;
-
-	for (auto iter = this->poly.begin(); iter != this->poly.end(); ++iter)
-		for (auto iter2 = P.poly.begin(); iter2 != P.poly.end(); ++iter2)
-		{
-			newpoly.addP(iter->first + iter2->first, iter->second * iter2->second);
-		}
-
-	newpoly.isZero();
-	return newpoly;
-}
-
-template<class T>
-Polynom<T> Polynom<T>::operator*(const T num) const
-{
-	Polynom<T> newpoly(*this);
-
-	for (auto iter = newpoly.poly.begin(); iter != newpoly.poly.end(); ++iter)
-		newpoly.poly[iter->first] = iter->second * num;
-
-	newpoly.isZero();
-	return newpoly;
-}
-
-template<class T>
-Polynom<T> operator*(const T &num, const Polynom<T> &P)
-{
-	Polynom<T> newpoly(P);
-
-	for (auto iter = newpoly.poly.begin(); iter != newpoly.poly.end(); ++iter)
-		newpoly.poly[iter->first] = num * iter->second;
-
-	newpoly.isZero();
-	return newpoly;
-}
-
-
-template<class T>
-Polynom<T> Polynom<T>::operator/(const Polynom<T>& P) const
-{
-	if ((P.poly.size() == 1) && (P.poly.find(0)->second == 0))	//проверка, что второй полином не равен 0 (состоит из 0*x^0)
-		exit(7);
-
-	Polynom<T> temp(*this), res;
-
-	auto itPol = P.poly.end();
-	--itPol;	// последний элемент
-
+	Polynom<T> divident(*this), result;
+	auto inp_it = other.polynom.end();
+	--inp_it;
 	while (true)
 	{
-		if (temp.poly.empty())
-			return res;
-
-		auto itTemp = temp.poly.end();
-		--itTemp;	// последний элемент 
-
-		if (itTemp->first < itPol->first)	// знаменатель более высокого порядка
-			return res;	// возвращаем 0 (в случае, если true сразу)
+		auto div_it = divident.polynom.end();
+		--div_it;
+		if (div_it->first < inp_it->first)
+			return result;
 		else
 		{
-			for (auto iter = P.poly.begin(); iter != itPol; iter++)
+			for (auto it = other.polynom.begin(); it != inp_it; ++it)
 			{
-				T num;
-				num = -1;
-
-				temp.addP(iter->first + itTemp->first - itPol->first, num * iter->second * itTemp->second / itPol->second);
+				divident.addMonom(T(-1) * it->second * div_it->second / inp_it->second,
+					it->first + div_it->first - inp_it->first);
 			}
-
-			res.addP(itTemp->first - itPol->first, itTemp->second / itPol->second);
-			temp.poly.erase(itTemp->first);
+			result.addMonom(div_it->second / inp_it->second,
+				div_it->first - inp_it->first);
+			divident.polynom.erase(div_it);
 		}
 	}
 }
 
-
-template<class T>
-Polynom<T>& Polynom<T>::operator=(const Polynom<T> &P)
+// operator%
+template <typename T>
+Polynom<T> Polynom<T>::operator%(const Polynom<T>& other)
 {
-	this->poly = P.poly;
+	Polynom<T> result(*this);
+	auto inp_it = other.polynom.end();
+	--inp_it;
+	while (true)
+	{
+		auto res_it = result.polynom.end();
+		--res_it;
+		if (res_it->first < inp_it->first)
+			return result;
+		else
+		{
+			for (auto it = other.polynom.begin(); it != inp_it; ++it)
+			{
+				result.addMonom(T(-1) * it->second * res_it->second / inp_it->second,
+					it->first + res_it->first - inp_it->first);
+			}
+			result.polynom.erase(res_it);
+		}
+	}
+}
 
+// operator=
+template <typename T>
+Polynom<T>& Polynom<T>::operator=(const Polynom<T>& other)
+{
+	this->polynom = other.polynom;
 	return *this;
 }
 
-// добавляем новый или переписываем имеющийся
-template<class T>
-void Polynom<T>::add(int key, const T &num)
+
+// Добавить моном
+template <typename T>
+void Polynom<T>::addMonom(const T& coef, const int& degree)
 {
-	auto itfind = this->poly.find(key);
-	if (itfind != this->poly.end())
-		this->poly[key] = num;
+	if (this->polynom.count(degree))
+		this->polynom[degree] = this->polynom[degree] + coef;
 	else
-		this->poly.insert(pair<int, T>(key, num));
-	return;
-}
+		this->polynom[degree] = coef;
 
-template<class T>
-void Polynom<T>::addP(int key, const T &num)
-{
-	auto itfind = this->poly.find(key);
-	if (itfind != this->poly.end())
-		this->poly[key] += num;
-	else
-		this->poly.insert(pair<int, T>(key, num));
-
-	return;
-}
-
-template<class T>
-Polynom<T> Polynom<T>::differentiation() const
-{
-	Polynom<T> newpoly;
-	for (auto iter = this->poly.begin(); iter != this->poly.end(); ++iter)
+	if (polynom[degree] == T(0))
 	{
-		if (iter->first == 0)	// степень = 0
-			continue;
+		auto it = this->polynom.find(degree);
+		this->polynom.erase(it);
+	}
+}
 
-		newpoly.addP(iter->first - 1, iter->second * iter->first);
+// Производная
+template <typename T>
+Polynom<T> Polynom<T>::differentiate()
+{
+	Polynom<T> result;
+	for (auto it = this->polynom.begin(); it != this->polynom.end(); ++it)
+	{
+		if (0 != it->first)
+			result.addMonom(it->second * it->first, it->first - 1);
+	}
+	return result;
+}
+
+// Значение функции в точке
+template <typename T>
+T Polynom<T>::atX(const T& num)
+{
+	if (this->polynom.empty())
+		return T(0);
+	T result(0), pw_val;
+	for (auto it = this->polynom.begin(); it != this->polynom.end(); ++it)
+	{
+		if (0 != it->first)
+			pw_val = num;
+		else
+			pw_val = 1;
+		for (int i = it->first - 1; i > 0; --i)
+			pw_val = pw_val * num;
+		result = result + pw_val * it->second;
+	}
+	return result;
+}
+
+// Суперпозиция
+template <typename T>
+Polynom<T> Polynom<T>::superposition(const Polynom<T>& inner)
+{
+	Polynom<T> result;
+	for (auto it = this->polynom.begin(); it != this->polynom.end(); ++it)
+	{
+		if (it->first > 0)
+		{
+			Polynom<T> grPol(inner), coefPol;
+			for (int i = it->first - 1; i > 0; --i)
+				grPol = grPol * inner;
+			coefPol.addMonom(it->second, 0);
+			result = result + grPol * coefPol;
+		}
+		else
+			result.addMonom(it->second, 0);
+	}
+	return result;
+}
+
+// Перегрузка оператора вывода
+template <typename T>
+ostream& operator<<(ostream& os, const Polynom<T>& pol)
+{
+	if (pol.polynom.empty())
+		os << 0;
+	else
+	{
+		auto it = pol.polynom.end();
+		--it;
+		for (auto jt = pol.polynom.begin(); jt != it; ++jt)
+			if (jt->first == 0)
+				os << jt->second << " + ";
+			else
+				if (jt->first == 1)
+					os << jt->second << "x" << " + ";
+				else
+					os << jt->second << "x^" << jt->first << " + ";
+
+		if (0 == it->first)
+			os << it->second;
+		else
+			if (it->first == 1)
+				os << it->second << "x";
+			else
+				os << it->second << "x^" << it->first;
+	}
+	return os;
+}*/
+
+
+#include<map>
+#include<iterator>
+
+template<typename T>
+class Polynom
+{
+private:
+	map<int, T> polynom;
+public:
+	// Конструкторы
+	Polynom() = default;
+	Polynom(map<int, T>&);
+	Polynom(const Polynom&);
+	
+	// Перегрузки
+	Polynom operator+(const Polynom&) const;
+	Polynom operator-(const Polynom&) const;
+	Polynom operator*(const Polynom&) const;
+	Polynom operator/(const Polynom&) const;
+	Polynom operator%(const Polynom&);
+	Polynom& operator=(const Polynom&);
+
+	void addMonom(T, int);
+	Polynom differentiate();
+	void SetItems(map<int, T>&);
+	map<int, T>& GetItems();
+	T pointValue(T);
+	Polynom superposition(Polynom);
+	friend ostream& operator<< <T>(ostream&, const Polynom&);
+
+	friend Polynom operator*(const int num, const Polynom& P)
+	{
+		Polynom<T> res;
+		for (auto it : P.polynom) // I LOVE C++11 <3
+			res.addMonom(it.second * num, it.first);
+		return res;
 	}
 
-	return newpoly;
+	friend Polynom operator*(const Polynom& P, const int num)
+	{
+		Polynom<T> res;
+		for (auto it : P.polynom)
+			res.addMonom(it.second * num, it.first);
+		return res;
+	}
+};
+
+template<typename T>
+Polynom<T>::Polynom(map<int, T> &mp)
+{
+	T num; num = 0;
+	for (auto it : mp)
+		if (!(it.second == num))
+			polynom[it.first] = it.second;
+}
+// Конструктор копирования
+template<typename T>
+Polynom<T>::Polynom(const Polynom& P)
+{
+	polynom = P.polynom;
+}
+//operator=
+template<typename T>
+Polynom<T> & Polynom<T>::operator=(const Polynom<T>& P)
+{
+	polynom = P.polynom;
+	return *this;
 }
 
-template<class T>
-T Polynom<T>::solve(T x) const
+//operator+
+template<typename T>
+Polynom<T> Polynom<T>::operator+(const Polynom<T>& P) const
 {
-	T res;
-	res = 0;
-
-	for (auto iter = this->poly.begin(); iter != this->poly.end(); ++iter)
-		res += iter->second * pow(x, iter->first);
-
+	Polynom<T> res(*this);
+	for (auto it : P.polynom)
+		res.addMonom(it.second, it.first);
 	return res;
 }
 
-template<class T>
-void Polynom<T>::isZero()
+//operator-
+template<typename T>
+Polynom<T> Polynom<T>::operator-(const Polynom<T>& P) const
 {
-	vector<int> save;
-	for (auto iter = this->poly.begin(); iter != this->poly.end(); ++iter)
-	{
-		if ((iter->second == 0) && (iter->first != 0))
-			save.push_back(iter->first);
-	}
-
-	for (int i = 0; i < save.size(); i++)
-		this->poly.erase(save[i]);
-
-	return;
+	Polynom<T> res(P * -1);
+	res = res + *this;
+	return res;
 }
 
-template<class T>
-ostream& operator<<(ostream& os, const Polynom<T>& P)
+//operator*
+template<typename T>
+Polynom<T> Polynom<T>::operator*(const Polynom<T>& P) const
 {
-	if (P.poly.size() == 0)
+	Polynom<T> res;
+	for (auto it1 : P.polynom)
 	{
-		exit(-9);
+		for (auto it2 : P.polynom)
+		{ 
+			res.addMonom(it1.second * it2.second, it1.first + it2.first);
+		}
 	}
-	else
-		if (P.poly.size() == 1)
-		{
-			auto iter = P.poly.begin();
-			os << iter->second;
-			return os;
-		}
-
-	Polynom<T> copy(P);	// копируем для вывода
-	if ((copy.poly.find(0) != copy.poly.end()) && (copy.poly.find(0)->second == 0))  //есть 0*x^0
-		copy.poly.erase(0);
-
-	int counter = copy.poly.size();
-	for (auto iter = copy.poly.rbegin(); iter != copy.poly.rend(); ++iter)
-	{
-		if (iter->second != 0)
-		{
-			if (iter->first == 0)
-				os << iter->second;
-			else
-				os << iter->second << "*x^" << iter->first;
-		}
-		else
-		{
-			--counter;
-			continue;
-		}
-
-		if (counter > 1)
-			os << " + ";
-
-		--counter;
-	}
-	return os;
+	return res;
 }
 
-
-template<class T>
-istream& operator>>(istream& in, Polynom<T>& P)
+template<typename T>
+Polynom<T> Polynom<T>::operator/(const Polynom<T>& P) const
 {
-	P.poly.clear();
-	T koef;
-	koef = 0;
-	int degree = 0;
-	P.poly.insert(pair<int, T>(degree, koef));	//всегда присутствует нулевая степень
-
+	Polynom<T> divisPol(*this);
+	Polynom<T> res;
+	auto inp_it = P.polynom.end();
+	--inp_it;
 	while (true)
 	{
-		in >> koef >> degree;
-
-		if (in.fail())	// "плохой символ"
-			break;
-
-		if ((koef != 0) || (degree == 0))
-			P.add(degree, koef);
-
-		if (degree == 0)	// нулевая степень - остановка ввода
-			break;
+		if (divisPol.polynom.empty())
+		{
+			T var; var = 0;
+			res.addMonom(0, var);
+			return res;
+		}
+		auto div_it = divisPol.polynom.end(); --div_it;
+		if (div_it->first < inp_it->first)
+			return res;
+		else
+		{
+			for (auto it = P.polynom.begin(); it != inp_it; ++it)
+			{
+				T num = -1;
+				divisPol.addMonom(num * it->second * div_it->second / inp_it->second, it->first + div_it->first - inp_it->first);
+			}
+			res.addMonom(div_it->second / inp_it->second, div_it->first - inp_it->first);
+			divisPol.polynom.erase(div_it);
+		}
 	}
-
-	return in;
 }
 
-template<class T, class U>
-Fraction<U> pow(const Fraction<U> &arg, int degree)
+//operator%
+template<typename T>
+Polynom<T> Polynom<T>::operator%(const Polynom<T>& P)
 {
-	if (degree == 0)
-		return Fraction<U>(1);
-	else
-		if (degree < 0)
+	Polynom<T> res(*this);
+	auto inp_it = P.polynom.end();
+	--inp_it;
+	while (true)
+	{
+		if (res.polynom.empty())
 		{
-			Fraction<U> newarg(arg);
-			newarg = 1 / newarg;
-			for (int i = degree; i > 1; i--)
-				newarg *= newarg;
-
-			return newarg;
+			T var; var = 0;
+			res.addMonom(0, var);
+			return res;
 		}
+		auto res_it = res.polynom.end(); --res_it;
+		if (res_it->first < inp_it->first)
+			return res;
 		else
-			if (degree > 0)
+		{
+			for (auto it = P.polynom.begin(); it != inp_it; ++it)
 			{
-				Fraction<U> newarg(arg);
-
-				for (int i = 1; i < degree; i++)
-					newarg = newarg * arg;
-
-				return newarg;
+				T num; num = -1;
+				res.addMonom(num * it->second * res_it->second / inp_it->second, it->first + res_it->first - inp_it->first);
 			}
+			res.polynom.erase(res_it);
+		}
+	}
 }
 
-template<class T>
-Polynom<T> pow(const Polynom<T> &arg, int degree)
+// Добавить моном
+template<typename T>
+void Polynom<T>::addMonom(T item, int degree)
 {
-	if (degree == 0)
-		return Polynom<T>(0, pow(T(1), 0));
+	if (polynom.count(degree))
+	{
+		polynom[degree] = polynom[degree] + item;
+	}
 	else
-		if (degree < 0)
+		polynom[degree] = item;
+
+	T nul; nul = 0;
+	if (polynom[degree] == nul)
+	{
+		auto it = polynom.find(degree);
+		polynom.erase(it);
+	}
+}
+//Derivative
+template<typename T>
+Polynom<T> Polynom<T>::differentiate()
+{
+	Polynom<T> derPolynom;
+	for (auto it : polynom)
+	{
+		if (it.first != 0)
+			derPolynom.addMonom(it.second * it.first, it.first - 1);
+		else 
 		{
-			throw std::invalid_argument("polynom to negative degree ");
-			return Polynom<T>();
+			T num = 0;
+			derPolynom.addMonom(num, 0);
 		}
+	}
+	return derPolynom;
+}
+
+//set map
+template<typename T>
+void Polynom<T>::SetItems(map<int, T>& m)
+{
+	polynom.clear();
+	T num = 0;
+	for (auto it : m)
+		if (it.second != num)
+			polynom[it.first] = it.second;
+}
+
+//get map
+template<typename T>
+map<int, T>& Polynom<T>::GetItems()
+{
+	return polynom;
+}
+//
+template<typename T>
+T Polynom<T>::pointValue(T x)
+{
+	if (!polynom.empty())
+	{
+		T sum = 0, pw_val;
+		for (auto it : polynom)
+		{
+			if (it.first != 0)
+				pw_val = x;
+			else
+				pw_val = 1;
+			for (int i = it.first - 1; i > 0; i--)
+				pw_val = pw_val * x;
+			sum = sum + pw_val * it.second;
+		}
+		return sum;
+	}
+	else
+	{
+		//T val = 0;
+		//return val;
+		return 0;
+	}
+}
+
+template<typename T>
+Polynom<T> Polynom<T>::superposition(Polynom<T> P)
+{
+	Polynom<T> result;
+	for (auto it : polynom)
+	{
+		if (it.first > 0)
+		{
+			Polynom<T> pwPol(P), coeffPol;
+			for (int i = it.first - 1; i > 0; i--)
+				pwPol = pwPol * P;
+			coeffPol.addMonom(it->second, 0);
+			result = result + pwPol * coeffPol;
+		}
+		else if (it.first == 0)
+			result.addMonom(it.second, 0);
+	}
+	return result;
+}
+
+// Перегрузка оператора вставки в поток  
+template<typename T>
+ostream& operator<<(ostream& os, const Polynom<T>& P)
+{
+	if (P.polynom.empty())
+		os << 0;
+	else
+	{
+		auto iter = P.polynom.end();
+		iter--;
+		for (auto it = P.polynom.begin(); it != iter; ++it)
+		{
+			if (it->first == 0)
+				os << it->second << " + ";
+			else
+				if (it->first == 1)
+					os << it->second << "x" << " + ";
+				else
+					os << it->second << "x^" << it->first << " + ";
+		}
+		if (iter->first == 0)
+			os << iter->second;
 		else
-			if (degree > 0)
-			{
-				Polynom<T> newarg(arg);
-
-				for (int i = 1; i < degree; i++)
-					newarg = newarg * arg;
-
-				return newarg;
-			}
+			if (iter->first == 1)
+				os << iter->second << "x";
+			else
+				os << iter->second << "x^" << iter->first;
+	}
+	return os;
 }
