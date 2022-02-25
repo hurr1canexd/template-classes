@@ -8,14 +8,14 @@ template <typename T>
 class Fraction
 {
 	/*static_assert(std::is_same<T, int>::value || std::is_same<T, char>::value || 
-	std::is_same<T, unsigned char>::value,L"недопустимый тип");*/
+	std::is_same<T, unsigned char>::value,L"РЅРµРґРѕРїСѓСЃС‚РёРјС‹Р№ С‚РёРї");*/
 public:
-	// Constructors === Конструкторы
+	// Constructors === РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹
 	Fraction();
 	Fraction(const T);
 	Fraction(const T Tnum, const T Tdenom);
 
-	// Overloadings === Перегрузки
+	// Overloadings === РџРµСЂРµРіСЂСѓР·РєРё
 	friend istream& operator>> <T>(istream&, Fraction&);
 	friend ostream& operator<< <T>(ostream&, const Fraction&);
 	
@@ -23,20 +23,20 @@ public:
 	Fraction<T> operator-(const Fraction<T>&) const;
 	Fraction<T> operator*(const Fraction<T>&) const;
 	Fraction<T> operator/(const Fraction<T>&) const;
-	Fraction<T> operator*(int); // multiply by number === умножение на число
+	Fraction<T> operator*(int); // multiply by number === СѓРјРЅРѕР¶РµРЅРёРµ РЅР° С‡РёСЃР»Рѕ
 	bool operator==(int);
 	bool operator!=(int);
 
-	// Euclidean algorithm === Алгоритм Евклида
+	// Euclidean algorithm === РђР»РіРѕСЂРёС‚Рј Р•РІРєР»РёРґР°
 	T gcd(T, T);
 
 private:
-	T num; // numerator of the fraction === числитель дроби
-	T denom; // denominator of the fraction === знаменатель дроби
+	T num; // numerator of the fraction === С‡РёСЃР»РёС‚РµР»СЊ РґСЂРѕР±Рё
+	T denom; // denominator of the fraction === Р·РЅР°РјРµРЅР°С‚РµР»СЊ РґСЂРѕР±Рё
 };
 
 
-// Constructors === Конструкторы
+// Constructors === РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹
 template <typename T>
 Fraction<T>::Fraction() = default;
 
@@ -60,7 +60,7 @@ istream& operator>>(istream &is, Fraction<T>& F)
 	is >> F.num >> F.denom;
 	if (!F.denom)
 	{
-		cout << "Нулевой знаменатель.";
+		cout << "РќСѓР»РµРІРѕР№ Р·РЅР°РјРµРЅР°С‚РµР»СЊ.";
 		exit(-4);
 	}
 	T tmp = F.gcd(F.num, F.denom);
@@ -154,7 +154,7 @@ Fraction<T> Fraction<T>::operator/(const Fraction<T>& F) const
 	Fraction<T> obj;
 	if ((!F.denom)||(!this->num))
 	{
-		cout << "Деление на ноль!";
+		cout << "Р”РµР»РµРЅРёРµ РЅР° РЅРѕР»СЊ!";
 		exit(-3);
 	}
 	obj.num = this->num*F.denom;
@@ -172,7 +172,7 @@ Fraction<T> Fraction<T>::operator*(int alpha)
 	return *this;
 }
 
-// Euclidean algorithm === алгоритм Евклида
+// Euclidean algorithm === Р°Р»РіРѕСЂРёС‚Рј Р•РІРєР»РёРґР°
 template <typename T>
 T Fraction<T>::gcd(T a, T b)
 {

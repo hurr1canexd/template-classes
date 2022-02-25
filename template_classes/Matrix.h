@@ -10,11 +10,11 @@ template <typename T, unsigned int order>
 class Matrix
 {
 public:
-	// Constructors === Êîíñòðóêòîðû
+	// Constructors === ÐšÐ¾Ð½ÑÑ‚Ñ€ÑƒÐºÑ‚Ð¾Ñ€Ñ‹
 	Matrix();
 	Matrix(T);
 
-	// Overloadings === Ïåðåãðóçêè
+	// Overloadings === ÐŸÐµÑ€ÐµÐ³Ñ€ÑƒÐ·ÐºÐ¸
 	friend istream& operator>> <T, order>(istream&, Matrix&);
 	friend ostream& operator<< <T, order>(ostream&, const Matrix&);
 	Matrix<T, order> operator+(const Matrix<T, order>&);
@@ -183,7 +183,7 @@ Matrix<T, order> Matrix<T, order>::inverse()
 {
 	if (this->determinant() == 0)
 	{	
-		cout << "Íóëåâîé îïðåäåëèòåëü :(";
+		cout << "ÐÑƒÐ»ÐµÐ²Ð¾Ð¹ Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»Ð¸Ñ‚ÐµÐ»ÑŒ :(";
 		exit(-3);
 	}
 	Matrix<T, order> res, obj = *this;

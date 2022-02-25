@@ -11,12 +11,12 @@ class Polynom
 private:
 	map<int, T> polynom;
 public:
-	// Конструкторы
+	// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂС‹
 	Polynom() = default;
 	Polynom(map<int, T>&);
 	Polynom(const Polynom&);
 	
-	// Перегрузки
+	// РџРµСЂРµРіСЂСѓР·РєРё
 	Polynom operator+(const Polynom&) const;
 	Polynom operator-(const Polynom&) const;
 	Polynom operator*(const Polynom&) const;
@@ -48,7 +48,7 @@ Polynom<T>::Polynom(map<int, T> &mp)
 			polynom[it.first] = it.second;
 }
 
-// Конструктор копирования
+// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
 template<typename T>
 Polynom<T>::Polynom(const Polynom& P)
 {
@@ -159,7 +159,7 @@ Polynom<T> Polynom<T>::operator%(const Polynom<T>& P)
 	}
 }
 
-// Добавить моном
+// Р”РѕР±Р°РІРёС‚СЊ РјРѕРЅРѕРј
 template<typename T>
 void Polynom<T>::addMonom(T item, int degree)
 {
@@ -177,7 +177,7 @@ void Polynom<T>::addMonom(T item, int degree)
 	}
 }
 
-// Производная
+// РџСЂРѕРёР·РІРѕРґРЅР°СЏ
 template<typename T>
 Polynom<T> Polynom<T>::differentiate()
 {
@@ -195,7 +195,7 @@ Polynom<T> Polynom<T>::differentiate()
 	return res;
 }
 
-// Значение в точке
+// Р—РЅР°С‡РµРЅРёРµ РІ С‚РѕС‡РєРµ
 template<typename T>
 T Polynom<T>::pointValue(T x)
 {
@@ -228,11 +228,11 @@ Polynom<T> Polynom<T>::superposition(Polynom<T> P)
 	{
 		if (it.first > 0)
 		{
-			Polynom<T> pwPolу(P), coeffsPoly;
+			Polynom<T> pwPolСѓ(P), coeffsPoly;
 			for (int i = it.first - 1; i > 0; i--)
-				pwPolу = pwPolу * P;
+				pwPolСѓ = pwPolСѓ * P;
 			coeffsPoly.addMonom(it.second, 0);
-			res = res + coeffsPoly * pwPolу;
+			res = res + coeffsPoly * pwPolСѓ;
 		}
 		else if (it.first == 0)
 			res.addMonom(it.second, 0);
@@ -240,7 +240,7 @@ Polynom<T> Polynom<T>::superposition(Polynom<T> P)
 	return res;
 }
 
-// Перегрузка оператора вставки в поток  
+// РџРµСЂРµРіСЂСѓР·РєР° РѕРїРµСЂР°С‚РѕСЂР° РІСЃС‚Р°РІРєРё РІ РїРѕС‚РѕРє  
 template<typename T>
 ostream& operator<<(ostream& os, const Polynom<T>& P)
 {
